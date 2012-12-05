@@ -5,12 +5,13 @@
  *      Author: cody
  */
 
-#define LINUX
-//#define WINDOWS
-
 #ifdef LINUX
 	#include <sys/socket.h>
 	#include <unistd.h>
+	#include <netdb.h>
+	#include <arpa/inet.h>
+	#include <netinet/in.h>
+	#include <sys/types.h>
 #endif
 
 #ifdef WINDOWS
@@ -19,22 +20,20 @@
 #endif
 
 #include <sqlite3.h>
-#include <ncurses.h>
+#include <stdio.h>
+#include <string.h>
 
-void _sleep(int millis);
+#include "server.h"
+#include "client.h"
+#include "sql.h"
+
+#define HOSTBLAR "example.com"
+
+char* bindaddr = NULL;
+//char* bindaddr = "192.168.0.100"; // Or whatever.
 
 int main()
 {
-	;
+	createServer();
 	return 0;
-}
-
-void _sleep(int millis)
-{
-	#ifdef LINUX
-		sleep(millis);
-	#endif
-	#ifdef WINDOWS
-		Sleep(millis);
-	#endif
 }

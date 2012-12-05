@@ -8,6 +8,6 @@
 #ifndef SERVER_H_
 #define SERVER_H_
 
-
+int createServer(struct sockaddr info);
 
 #endif /* SERVER_H_ */
