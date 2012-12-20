@@ -5,35 +5,39 @@
  *      Author: cody
  */
 
-#ifdef LINUX
-	#include <sys/socket.h>
-	#include <unistd.h>
-	#include <netdb.h>
-	#include <arpa/inet.h>
-	#include <netinet/in.h>
-	#include <sys/types.h>
-#endif
-
 #ifdef WINDOWS
 	#include <winsock.h>
 	#include <windows.h>
+#else
+	#include <stdio.h>
+	#include <string.h>
+	#include <errno.h>
 #endif
-
-#include <sqlite3.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "server.h"
 #include "client.h"
-#include "sql.h"
-
-#define HOSTBLAR "example.com"
-
-char* bindaddr = NULL;
-//char* bindaddr = "192.168.0.100"; // Or whatever.
+#include "signals.h"
+#include "misc.h"
 
 int main()
 {
+	int retval;
+
+	setLogFile(NULL); // Set the logfile to the default. "~/.reperire.log"
+	fp = fopen(logfile,"a+");
+	if (!fp)
+	{ // Test if the logfile can be opened for writing.  If not, die.
+		perror("fopen");
+		exit(1);
+		setLogFile(stderr);// Maybe in the future.
+	}
+	fputs("\n\n",fp);
+	fclose(fp);
+	printLog("Reperire Log");
+
+	retval = createSigHandlers();
+
 	createServer();
+
 	return 0;
 }

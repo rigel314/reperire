@@ -5,13 +5,20 @@
  *      Author: cody
  */
 
+#ifdef WINDOWS
+	#include <windows.h>
+	#include <winsock.h>
+#else
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <unistd.h>
+	#include <errno.h>
+	#include <string.h>
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+#endif
 
-void _sleep(int millis)
-{
-	#ifdef LINUX
-		sleep(millis);
-	#endif
-	#ifdef WINDOWS
-		Sleep(millis);
-	#endif
-}
+
