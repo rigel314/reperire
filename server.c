@@ -49,7 +49,6 @@ int createServer()
 	char s[INET6_ADDRSTRLEN];
 	char buf[MAXBUFLEN];
 	socklen_t addr_len;
-	char errmsg[100];
 
 
 	// Load up address structs to use with getaddrinfo().

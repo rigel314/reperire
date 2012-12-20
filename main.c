@@ -21,21 +21,19 @@
 
 int main()
 {
-	int retval;
-
 	setLogFile(NULL); // Set the logfile to the default. "~/.reperire.log"
 	fp = fopen(logfile,"a+");
 	if (!fp)
 	{ // Test if the logfile can be opened for writing.  If not, die.
 		perror("fopen");
 		exit(1);
-		setLogFile(stderr);// Maybe in the future.
+		//setLogFile(stderr); // Maybe in the future.
 	}
 	fputs("\n\n",fp);
 	fclose(fp);
 	printLog("Reperire Log");
 
-	retval = createSigHandlers();
+	createSigHandlers();
 
 	createServer();
 
