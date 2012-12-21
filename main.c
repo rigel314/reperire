@@ -22,15 +22,15 @@
 int main()
 {
 	setLogFile(NULL); // Set the logfile to the default. "~/.reperire.log"
-	fp = fopen(logfile,"a+");
+	FILE* fp = fopen(logfile,"a+");
 	if (!fp)
-	{ // Test if the logfile can be opened for writing.  If not, die.
-		perror("fopen");
-		exit(1);
-		//setLogFile(stderr); // Maybe in the future.
+	{ // Test if the logfile can be opened for writing.  If not, use stderr instead.
+		perror("fopen"); // All the Log functions will default to stderr upon failing fopen(logfile) as well.
+		fp = stderr;
 	}
 	fputs("\n\n",fp);
-	fclose(fp);
+	if(fp != stderr)
+		fclose(fp);
 	printLog("Reperire Log");
 
 	createSigHandlers();

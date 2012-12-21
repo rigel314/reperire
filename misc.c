@@ -21,7 +21,6 @@
 char* logfile = ".reperire.log";
 char* bindaddr = NULL;
 //char* bindaddr = "192.168.0.100"; // Or whatever.
-FILE* fp;
 
 void setLogFile(char* file)
 {
@@ -38,13 +37,14 @@ void printLog(char* msg)
 
 	now = time(NULL);
 	lcltime = localtime(&now);
-	fp = fopen(logfile,"a+");
+	FILE* fp = fopen(logfile,"a+");
 	if (!fp)
 	{
-		return;
+		fp = stderr;
 	}
 	fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d ~ %s\n", lcltime->tm_year + 1900, lcltime->tm_mon + 1, lcltime->tm_mday, lcltime->tm_hour, lcltime->tm_min, lcltime->tm_sec, msg);
-	fclose(fp);
+	if(fp != stderr)
+		fclose(fp);
 }
 
 void printfLog(char* fmt, ...)
@@ -67,6 +67,7 @@ void printfLog(char* fmt, ...)
 	vsprintf(msg, fmt, ap);
 	printLog(msg);
 
+	free(msg);
 	va_end(ap);
 }
 

@@ -43,6 +43,7 @@ void *get_in_addr(struct sockaddr *sa)
 int createServer()
 {
 	int sockfd; // listening socket
+	int retval;
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage their_addr; // connector's address information
 	int numbytes;
@@ -58,20 +59,24 @@ int createServer()
 	if(!bindaddr)
 		hints.ai_flags = AI_PASSIVE;		// fill in my IP for me
 
-	getaddrinfo((bindaddr)?bindaddr:NULL, "49364", &hints, &servinfo);
+	if((retval = getaddrinfo((bindaddr)?bindaddr:NULL, "49364", &hints, &servinfo)))
+	{
+		printfLog("server getaddrinfo(): %s", gai_strerror(retval));
+		return 2;
+	}
 
 	for(p = servinfo; p != NULL; p = p->ai_next)
 	{ // Loop through all results from getaddrinfo() and use the first one that works.
 		if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
 		{
-			printLogError("socket()", errno);
+			printLogError("sever socket()", errno);
 			continue;
 		}
 
 		if(bind(sockfd, p->ai_addr, p->ai_addrlen) == -1)
 		{
 			close(sockfd);
-			printLogError("bind()", errno);
+			printLogError("server bind()", errno);
 			continue;
 		}
 
@@ -82,8 +87,8 @@ int createServer()
 
 	if (p == NULL)
 	{
-		printLog("listener: failed to bind socket\n");
-		return 2;
+		printLog("server failed to bind socket");
+		return 3;
 	}
 
 	while(1)
@@ -98,14 +103,14 @@ int createServer()
 		addr_len = sizeof their_addr;
 		if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0, (struct sockaddr *)&their_addr, &addr_len)) == -1)
 		{
-			printLogError("recvfrom()", errno);
+			printLogError("server recvfrom()", errno);
 			continue;
 		}
 
-		printfLog("listener: got packet from %s", inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
-		printfLog("listener: packet is %d bytes long", numbytes);
+		printfLog("server got packet from %s", inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
+		printfLog("packet is %d bytes long", numbytes);
 		buf[numbytes] = '\0';
-		printfLog("listener: packet contains \"%s\"", buf);
+		printfLog("packet contains \"%s\"", buf);
 	}
 
 	return 0;
