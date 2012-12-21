@@ -121,14 +121,14 @@ int createServer()
 		buf[numbytes] = '\0';
 		printfLog("packet contains \"%s\"", buf);
 
-		if(strcmp(buf, "I'm here!"))
+		if(!strcmp(buf, "I'm here!"))
 			if(!fork())
 			{ // this is a child process
 				_sleep(rand() % 5000);
 				sendReplyPacket(inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
 				exit(0);
 			}
-		if(strcmp(buf, "I'm here too!"))
+		if(!strcmp(buf, "I'm here too!"))
 		{
 			printfLog("%s is here too!",inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
 		}
