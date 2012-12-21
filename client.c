@@ -33,7 +33,7 @@ char* findBroadcastAddr()
 	return "255.255.255.255";
 }
 
-int SocketAndSendto(int bcast, int reply, char* dest)
+int SocketAndSendto(int bcast, int reply, const char* dest)
 {
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
@@ -94,12 +94,12 @@ int sendBroadcast()
 	return SocketAndSendto(BCAST, INITAL, findBroadcastAddr());
 }
 
-int sendAlivePacket(char* dest)
+int sendAlivePacket(const char* dest)
 {
 	return SocketAndSendto(SINGLE, INITAL, dest);
 }
 
-int sendReplyPacket(char* dest)
+int sendReplyPacket(const char* dest)
 {
 	return SocketAndSendto(SINGLE, REPLY, dest);
 }

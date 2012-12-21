@@ -8,6 +8,8 @@
 #ifndef CLIENT_H_
 #define CLIENT_H_
 
-
+int sendBroadcast();
+int sendAlivePacket(const char* dest);
+int sendReplyPacket(const char* dest);
 
 #endif /* CLIENT_H_ */

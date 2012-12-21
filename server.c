@@ -23,11 +23,13 @@
 	#include <arpa/inet.h>
 	#include <netinet/in.h>
 	#include <sys/types.h>
+	#include <math.h>
 #endif
 
 #include "server.h"
 #include "signals.h"
 #include "misc.h"
+#include "client.h"
 
 #define MAXBUFLEN 100
 
@@ -91,6 +93,13 @@ int createServer()
 		return 3;
 	}
 
+	if(!fork())
+	{ // this is a child process
+		_sleep(1000);
+		sendBroadcast();
+		exit(0);
+	}
+
 	while(1)
 	{ // Loop forever waiting for data to come into the socket.
 		if(got_sigint)
@@ -111,6 +120,18 @@ int createServer()
 		printfLog("packet is %d bytes long", numbytes);
 		buf[numbytes] = '\0';
 		printfLog("packet contains \"%s\"", buf);
+
+		if(strcmp(buf, "I'm here!"))
+			if(!fork())
+			{ // this is a child process
+				_sleep(rand() % 5000);
+				sendReplyPacket(inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
+				exit(0);
+			}
+		if(strcmp(buf, "I'm here too!"))
+		{
+			printfLog("%s is here too!",inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
+		}
 	}
 
 	return 0;
