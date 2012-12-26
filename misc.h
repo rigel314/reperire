@@ -13,18 +13,24 @@
 #else
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <signal.h>
 #endif
 
 #define HOSTBLAR "example.com"
 
 extern char* logfile;
 extern char* bindaddr;
-extern FILE* fp;
+extern char* hostname;
+extern volatile sig_atomic_t numProcs;
 
 void setLogFile(char* file);
+void setHostname(char* host);
 void printLog(char* msg);
 void printfLog(char* fmt, ...);
 void printLogError(char* msg, int err);
+int checkValidBuf(char* buf, int size);
+unsigned int mkrand();
+void _mkdir(char* path);
 void _sleep(int millis);
 
 #endif /* MISC_H_ */

@@ -17,5 +17,6 @@
 extern volatile sig_atomic_t got_sigint;
 
 int createSigHandlers();
+int createChildSigHandlers();
 
 #endif /* SIGNALS_H_ */

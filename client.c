@@ -33,6 +33,23 @@ char* findBroadcastAddr()
 	return "255.255.255.255";
 }
 
+char* encapPacket(int reply, char* msg)
+{
+	char* out;
+	char* fmt = (reply) ? "\x06%s\x03" : "\x05%s\x03";
+
+	out = malloc(strlen(hostname) + 3);
+	if(!out)
+	{
+		printLogError("client: encapPacket malloc()", errno);
+		return NULL;
+	}
+
+	sprintf(out, fmt, msg);
+
+	return out;
+}
+
 int SocketAndSendto(int bcast, int reply, const char* dest)
 {
 	int sockfd;
@@ -40,6 +57,7 @@ int SocketAndSendto(int bcast, int reply, const char* dest)
 	int retval;
 	int numbytes;
 	int broadcast = 1;
+	char* packet;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = (bcast) ? AF_INET : AF_UNSPEC;
@@ -47,7 +65,7 @@ int SocketAndSendto(int bcast, int reply, const char* dest)
 
 	if ((retval = getaddrinfo(dest, "49364", &hints, &servinfo)) != 0)
 	{
-		printfLog("client getaddrinfo(): %s", gai_strerror(retval));
+		printfLog("client: getaddrinfo(): %s", gai_strerror(retval));
 		return 4;
 	}
 
@@ -55,7 +73,7 @@ int SocketAndSendto(int bcast, int reply, const char* dest)
 	{ // Loop through all results from getaddrinfo() and use the first one that works.
 		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
 		{
-			printLogError("client socket()", errno);
+			printLogError("client: socket()", errno);
 			continue;
 		}
 
@@ -64,26 +82,32 @@ int SocketAndSendto(int bcast, int reply, const char* dest)
 
 	if (p == NULL)
 	{
-		printLog("client failed to create socket");
+		printLog("client: failed to create socket");
 		return 5;
 	}
 
 	if(bcast)
 		if(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast) == -1)
 		{
-			printLogError("client setsockopt(SO_BROADCAST)", errno);
+			printLogError("client: setsockopt(SO_BROADCAST)", errno);
 			return 6;
 		}
 
-	if ((numbytes = sendto(sockfd, ((reply) ? "I'm here too!" : "I'm here!"), (reply) ? 13 : 9, 0, p->ai_addr, p->ai_addrlen)) == -1)
+	//((reply) ? "I'm here too!" : "I'm here!")
+	packet = encapPacket(reply, hostname);
+	printfLog("client: sent %s: %d bytes to %s", ((reply) ? "response" : "request"), strlen(packet), dest);
+	if(packet)
 	{
-		printLogError("client sendto()", errno);
-		return 7;
+		if ((numbytes = sendto(sockfd, packet, strlen(packet), 0, p->ai_addr, p->ai_addrlen)) == -1)
+		{
+			printLogError("client: sendto()", errno);
+			return 7;
+		}
+		free(packet);
 	}
 
 	freeaddrinfo(servinfo);
 
-	printfLog("client sent %d bytes to %s\n", numbytes, dest);
 	close(sockfd);
 
 	return 0;

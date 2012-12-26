@@ -14,26 +14,46 @@
 	#include <errno.h>
 	#include <unistd.h>
 	#include <stdarg.h>
+	#include <signal.h>
+	#include <sys/stat.h>
+	#include <stdlib.h>
 #endif
 
 #include "misc.h"
 
-char* logfile = ".reperire.log";
+char* logfile = NULL;
 char* bindaddr = NULL;
 //char* bindaddr = "192.168.0.100"; // Or whatever.
+char* hostname = NULL;
+volatile sig_atomic_t numProcs = 1;
 
 void setLogFile(char* file)
 {
 	if(!file)
-		logfile = strcat(getenv("HOME"), "/.reperire.log");
+	{
+		char* home = getenv("HOME");
+		logfile = malloc(strlen(home) + 24);
+		strcpy(logfile, home);
+		logfile = strcat(logfile, "/.reperire");
+		_mkdir(logfile);
+		logfile = strcat(logfile, "/reperire.log");
+	}
 	else
 		logfile = file;
+}
+
+void setHostname(char* host)
+{
+	if(!host)
+		hostname = "Damn Segfaults";
+	else
+		hostname = host;
 }
 
 void printLog(char* msg)
 {
 	time_t now;
-	struct tm *lcltime;
+	struct tm* 	lcltime;
 
 	now = time(NULL);
 	lcltime = localtime(&now);
@@ -89,6 +109,48 @@ void printLogError(char* msg, int err)
 	sprintf(logmsg, "%s: %s", msg, errmsg);
 	printLog(logmsg);
 	free(logmsg);
+}
+
+int checkValidBuf(char* buf, int size)
+{
+	int i;
+	for(i = 0; i < size; i++)
+	{
+		if(buf[i] == 3)
+		{
+			buf[i] = 0;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+unsigned int mkrand()
+{
+#ifdef WINDOWS
+	return rand();
+#else
+	int out;
+	int i;
+	FILE* fp = fopen("/dev/urandom", "r");
+	if(!fp)
+		return 4;
+	for(i=0; i<4; i++)
+	{
+		*(((char*)(&out))+i)=(char)fgetc(fp);
+	}
+	fclose(fp);
+	return out;
+#endif
+}
+
+void _mkdir(char* path)
+{
+	#ifdef WINDOWS
+		return;
+	#else
+		mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); // 755
+	#endif
 }
 
 void _sleep(int millis)

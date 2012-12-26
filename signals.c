@@ -13,6 +13,7 @@
 	#include <stdlib.h>
 	#include <errno.h>
 	#include <string.h>
+	#include <unistd.h>
 #endif
 
 #include "signals.h"
@@ -31,9 +32,18 @@ void sigHandler(int sig)
 			got_sigint = 1;
 			break;
 		case SIGCHLD:
-			while(waitpid(-1, NULL, WNOHANG) > 0);
+			while(waitpid(-1, NULL, WNOHANG) > 0)
+			{
+				numProcs--;
+			}
 			break;
 	}
+}
+
+void sigHandlerChildren(int sig)
+{ // Handler for the three registered signals.
+	if(sig == SIGINT)
+		_exit(0);
 }
 
 int createSigHandlers()
@@ -62,6 +72,31 @@ int createSigHandlers()
 	{
 		printLogError("SIGCHLD (child process terminated) handler failed to register", errno);
 		retval |= 4;
+	}
+
+	return retval;
+}
+
+int createChildSigHandlers()
+{ // Register a signal handler function for SIGINT, SIGTERM, and SIGCHLD.
+	struct sigaction sa;
+	int retval = 0;
+
+	sa.sa_handler = sigHandlerChildren;
+	sa.sa_flags = 0; // or SA_RESTART
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask,SIGINT);
+	sigaddset(&sa.sa_mask,SIGTERM);
+
+	if (sigaction(SIGINT,&sa,NULL) == -1)
+	{
+		printLogError("SIGINT (Ctrl-C) handler failed to register", errno);
+		retval |= 1;
+	}
+	if (sigaction(SIGTERM,&sa,NULL) == -1)
+	{
+		printLogError("SIGTERM (kill) handler failed to register", errno);
+		retval |= 2;
 	}
 
 	return retval;
