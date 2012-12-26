@@ -309,7 +309,7 @@ struct sqlIPResults* getAllIPs()
 			continue;																			// |
 																								// |
 		last = rslts;																			// |
-		rslts = malloc(sizeof(struct sqlIPResults));											// |
+		rslts = calloc(1, sizeof(struct sqlIPResults));										// |
 		if(!rslts)																				// |
 		{																						// |
 			printLogError("sqlite: getAllIPs: malloc()", errno);								// |
@@ -322,7 +322,7 @@ struct sqlIPResults* getAllIPs()
 		else																					// |
 			firstResult = rslts;																// |
 																								// |
-		rslts->ip = malloc(strlen(val));														// |
+		rslts->ip = calloc(strlen(val), 1);													// |
 		if(!rslts->ip)																			// |
 		{																						// |
 			printLogError("sqlite: getAllIPs: malloc() %d", errno);								// |

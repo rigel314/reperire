@@ -93,7 +93,6 @@ int SocketAndSendto(int bcast, int reply, const char* dest)
 			return 6;
 		}
 
-	//((reply) ? "I'm here too!" : "I'm here!")
 	packet = encapPacket(reply, hostname);
 	printfLog("client: sent %s: %d bytes to %s", ((reply) ? "response" : "request"), strlen(packet), dest);
 	if(packet)

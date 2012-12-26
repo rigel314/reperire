@@ -110,9 +110,8 @@ int createServer()
 			IPs = getAllIPs();
 			for(IP = IPs; IP != NULL; IP = IP->next)
 			{
-				printfLog("keep alive: %s", IP->ip);
-				//sendAlivePacket(IP->ip);
-				//_sleep(mkrand() % 1000);
+				sendAlivePacket(IP->ip);
+				_sleep(mkrand() % 1000);
 			}
 			freeSqlIPResult(IPs);
 
@@ -162,8 +161,6 @@ int createServer()
 			printfLog("server: received %s: %s is %s", ((packType==REQUEST) ? "request" : "response"), connectIP, connectName);
 
 			addHost(connectIP, connectName);
-
-			printfLog("server: %d children", numProcs);
 
 			if(packType == REQUEST && numProcs < MAXPROCS)
 			{
