@@ -107,6 +107,7 @@ int createServer()
 		while(1)
 		{
 			_sleep(300000);
+			printLog("keep alive: ");
 			IPs = getAllIPs();
 			for(IP = IPs; IP != NULL; IP = IP->next)
 			{

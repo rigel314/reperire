@@ -322,7 +322,7 @@ struct sqlIPResults* getAllIPs()
 		else																					// |
 			firstResult = rslts;																// |
 																								// |
-		rslts->ip = calloc(strlen(val), 1);													// |
+		rslts->ip = calloc(strlen(val) + 1, 1);												// |
 		if(!rslts->ip)																			// |
 		{																						// |
 			printLogError("sqlite: getAllIPs: malloc() %d", errno);								// |
@@ -358,9 +358,8 @@ void freeSqlIPResult(struct sqlIPResults* rslt)
 		return;
 
 	free(rslt->ip);
-	if(rslt->next) // If the next isn't null, we have to free it first.
-		freeSqlIPResult(rslt->next);
-	free(rslt); // Now free this one.
+	freeSqlIPResult(rslt->next);
+	free(rslt);
 
 	return;
 }
