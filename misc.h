@@ -18,6 +18,12 @@
 
 #define HOSTBLAR "example.com"
 
+struct fileLines
+{
+	char* line;
+	struct fileLines* next;
+};
+
 extern char* logfile;
 extern char* bindaddr;
 extern char* hostname;
@@ -29,6 +35,8 @@ void printLog(char* msg);
 void printfLog(char* fmt, ...);
 void printLogError(char* msg, int err);
 int checkValidBuf(char* buf, int size);
+struct fileLines* mkFileLines(char* file);
+void writeHosts();
 unsigned int mkrand();
 void _mkdir(char* path);
 void _sleep(int millis);

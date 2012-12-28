@@ -7,6 +7,8 @@
 
 #ifdef WINDOWS
 	#include <windows.h>
+
+	#define LnEND "\r\n"
 #else
 	#include <stdio.h>
 	#include <time.h>
@@ -17,9 +19,12 @@
 	#include <signal.h>
 	#include <sys/stat.h>
 	#include <stdlib.h>
+
+	#define LnEND "\n"
 #endif
 
 #include "misc.h"
+#include "sql.h"
 
 char* logfile = NULL;
 char* bindaddr = NULL;
@@ -123,6 +128,211 @@ int checkValidBuf(char* buf, int size)
 		}
 	}
 	return 0;
+}
+
+char* getHostsFile()
+{
+	#ifdef WINDOWS
+		return "C:\\Windows\\System32\\Drivers\\etc\\hosts";
+	#else
+		//return "/home/cody/.reperire/blar";
+		return "/etc/hosts";
+	#endif
+}
+
+struct fileLines* mkFileLines(char* file)
+{
+	FILE* fp;
+	struct fileLines* lines = NULL, *lastLn, *head;
+	int c, lastC = '\n';
+	int loc;
+
+	fp = fopen(file, "r");
+	if(!fp)
+	{
+		printLogError("mkFileLines: fopen()", errno);
+		return NULL;
+	}
+
+	while((c = fgetc(fp)) != -1)
+	{
+		if(lastC == '\n')
+		{
+			lastLn = lines;
+			lines = calloc(1, sizeof(struct fileLines));
+			if(!lines)
+			{
+				printLogError("mkFileLines: calloc()", errno);
+				return NULL;
+			}
+
+			if(lastLn)
+			{
+				lastLn->next = lines;
+				lastLn->line = realloc(lastLn->line, loc + 1);
+				if(!lastLn->line)
+				{
+					printLogError("mkFileLines: calloc() or realloc()", errno);
+					return NULL;
+				}
+				*(lastLn->line + loc) = 0;
+			}
+			else
+				head = lines;
+
+			loc = 0;
+		}
+
+		if(lines->line)
+			lines->line = realloc(lines->line, loc + 1);
+		else
+			lines->line = calloc(1, 1);
+		if(!lines->line)
+		{
+			printLogError("mkFileLines: calloc() or realloc()", errno);
+			return NULL;
+		}
+
+		*(lines->line + loc++) = c;
+
+		lastC = c;
+	}
+	if(*(lines->line + (loc - 1)) != '\n')
+	{
+		lines->line = realloc(lines->line, loc + 2);
+		lines->line = realloc(lines->line, strlen(lines->line) + 2);
+		if(!lines->line)
+		{
+			printLogError("mkFileLines: realloc()", errno);
+			return NULL;
+		}
+		*(lines->line + loc++) = '\n';
+	}
+	else
+	{
+		lines->line = realloc(lines->line, loc + 1);
+	}
+	*(lines->line + loc) = 0;
+
+	fclose(fp);
+	return head;
+}
+
+void freeFileLines(struct fileLines* lines)
+{
+	if(!lines) // Passed a null pointer
+		return;
+
+	free(lines->line);
+	freeFileLines(lines->next);
+	free(lines);
+
+	return;
+}
+
+struct fileLines* freeSomeFileLines(struct fileLines* lines, char* stop)
+{
+	struct fileLines* line;
+
+	if(!lines) // Passed a null pointer
+		return NULL;
+
+	if(strcmp(lines->line, stop))
+	{
+		free(lines->line);
+		line = lines->next;
+		free(lines);
+		return freeSomeFileLines(line, stop);
+	}
+
+	return lines;
+}
+
+void insertFileLine(struct fileLines* lines, char* new)
+{
+	struct fileLines* line;
+
+	if(!lines)
+		return;
+
+	line = lines->next;
+	lines->next = malloc(sizeof(struct fileLines));
+	if(!lines->next)
+	{
+		printLogError("insertFileLine: realloc()", errno);
+		return;
+	}
+	lines = lines->next;
+	lines->line = calloc(strlen(new) + 1, 1);
+	if(!lines->line)
+	{
+		printLogError("insertFileLine: realloc()", errno);
+		return;
+	}
+	strcpy(lines->line, new);
+	lines->next = line;
+
+	return;
+}
+
+void writeHosts()
+{
+	struct sqlIPResults* IPs, *IP;
+	struct fileLines* lines, *line;
+
+	lines = mkFileLines(getHostsFile());
+	if(!lines)
+	{
+		printLog("writeHosts: mkFileLines() failed");
+		return;
+	}
+	for(line = lines; line->next != NULL && strcmp(line->line, "#==begin reperire==DO NOT MODIFY==\n"); line = line->next);
+	if(line->next)
+		line->next = freeSomeFileLines(line->next, "#==end reperire==DO NOT MODIFY==\n");
+	else
+	{
+		insertFileLine(line, "#==begin reperire==DO NOT MODIFY==\n");
+		line = line->next;
+	}
+	insertFileLine(line, "# No changes between the begin and end will be saved.\n");
+	line = line->next;
+
+	IPs = getAllIPs();
+	for(IP = IPs; IP != NULL; IP = IP->next)
+	{
+		char* hostsEntry;
+
+		hostsEntry = malloc(strlen(IP->ip) + strlen(IP->name) + 3);
+		if(!hostsEntry)
+		{
+			printLogError("writeHosts: malloc()", errno);
+			return;
+		}
+		sprintf(hostsEntry, "%s\t%s\n", IP->ip, IP->name);
+		insertFileLine(line, hostsEntry);
+		line = line->next;
+	}
+	freeSqlIPResult(IPs);
+
+	if(!line->next)
+		insertFileLine(line, "#==end reperire==DO NOT MODIFY==\n");
+
+	FILE* fp = fopen(getHostsFile(), "w");
+	if(!fp)
+	{
+		printLogError("writeHosts: fopen()", errno);
+		freeFileLines(lines);
+		return;
+	}
+	for(line = lines; line != NULL; line = line->next)
+	{
+		fwrite(line->line, 1, strlen(line->line), fp);
+	}
+	fclose(fp);
+
+	freeFileLines(lines);
+
+	return;
 }
 
 unsigned int mkrand()

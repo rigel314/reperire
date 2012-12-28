@@ -47,7 +47,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int createServer()
 {
-	pid_t keepAlive;
+	pid_t procKeepAlive, procTimer;
 	int sockfd; // listening socket
 	int retval;
 	const char* connectIP;
@@ -59,6 +59,7 @@ int createServer()
 	char s[INET6_ADDRSTRLEN];
 	char buf[MAXBUFLEN];
 	socklen_t addr_len;
+	struct sqlIPResults* newEntries = NULL;
 
 	// Load up address structs to use with getaddrinfo().
 	memset(&hints, 0, sizeof hints);
@@ -98,7 +99,7 @@ int createServer()
 	}
 
 	// -------------Keep Alive Process---------------------------------------------------
-	if(!(keepAlive = fork()))
+	if(!(procKeepAlive = fork()))
 	{ // this is a child process
 		struct sqlIPResults* IPs, *IP;
 
@@ -106,18 +107,37 @@ int createServer()
 
 		while(1)
 		{
-			_sleep(300000);
+			_sleep(301000);
 			printLog("keep alive: ");
 			IPs = getAllIPs();
 			for(IP = IPs; IP != NULL; IP = IP->next)
 			{
-				sendAlivePacket(IP->ip);
-				_sleep(mkrand() % 1000);
+				/*sendAlivePacket(IP->ip);
+				_sleep(mkrand() % 1000);*/
+				delHost(IP->ip);
 			}
 			freeSqlIPResult(IPs);
 
 			sendBroadcast();
 		}
+	}
+	// ----------------------------------------------------------------------------------
+
+	// -------------Timer Process--------------------------------------------------------
+	if(!(procTimer = fork()))
+	{ // this is yet another child process
+		createChildSigHandlers();
+		while(1)
+		{
+			_sleep(6000);
+			if(got_sigusr1)
+			{
+				got_sigusr1 = 0;
+				continue;
+			}
+			kill(getppid(), SIGUSR1);
+		}
+		exit(0);
 	}
 	// ----------------------------------------------------------------------------------
 
@@ -135,14 +155,31 @@ int createServer()
 		if(got_sigint)
 		{ // Die gracefully on SIGINT or SIGTERM. (Ctrl-C or kill)
 			printLog("server: Closing on signal.");
-			printLog("server: Killing keep alive child process.");
-			kill(keepAlive, SIGINT);
-			waitpid(keepAlive,NULL,0);
+			printLog("server: Killing keep alive and timer child processes.");
+			kill(procKeepAlive, SIGINT);
+			kill(procTimer, SIGINT);
+			waitpid(procKeepAlive,NULL,0);
+			waitpid(procTimer,NULL,0);
 			close(sockfd);
-			freeaddrinfo(servinfo); // We're done with this.
+			freeaddrinfo(servinfo);
 			free(hostname);
-			//free(dbFile);
+			free(dbFile);
 			exit(0);
+		}
+		if(got_sigusr1)
+		{
+			got_sigusr1 = 0;
+			if(newEntries)
+			{
+				struct sqlIPResults* entry;
+
+				addHosts(newEntries);
+				writeHosts();
+				for(entry=newEntries; entry != NULL; entry = entry->next)
+					printfLog("server: %s = %s", entry->ip, entry->name);
+				freeSqlIPResult(newEntries);
+				newEntries = NULL;
+			}
 		}
 
 		addr_len = sizeof their_addr;
@@ -161,7 +198,11 @@ int createServer()
 			connectName = buf + 1;
 			printfLog("server: received %s: %s is %s", ((packType==REQUEST) ? "request" : "response"), connectIP, connectName);
 
-			addHost(connectIP, connectName);
+			//addHost(connectIP, connectName);
+			kill(procTimer, SIGUSR1); // reset timer
+			addSqlIPResult(&newEntries, connectIP, connectName); // add an entry
+			if(countSqlIPResults(newEntries) > 50) // if we've gotten over 50 packets since the last time the timer was
+				got_sigusr1 = 1;					// restarted, handle them as if the timer was restarted.
 
 			if(packType == REQUEST && numProcs < MAXPROCS)
 			{

@@ -20,6 +20,7 @@
 #include "misc.h"
 
 volatile sig_atomic_t got_sigint = 0;
+volatile sig_atomic_t got_sigusr1 = 0;
 
 void sigHandler(int sig)
 { // Handler for the three registered signals.
@@ -37,6 +38,9 @@ void sigHandler(int sig)
 				numProcs--;
 			}
 			break;
+		case SIGUSR1:
+			got_sigusr1 = 1;
+			break;
 	}
 }
 
@@ -44,6 +48,8 @@ void sigHandlerChildren(int sig)
 { // Handler for the three registered signals.
 	if(sig == SIGINT)
 		_exit(0);
+	if(sig == SIGUSR1)
+		got_sigusr1 = 1;
 }
 
 int createSigHandlers()
@@ -57,6 +63,7 @@ int createSigHandlers()
 	sigaddset(&sa.sa_mask,SIGINT);
 	sigaddset(&sa.sa_mask,SIGTERM);
 	sigaddset(&sa.sa_mask,SIGCHLD);
+	sigaddset(&sa.sa_mask,SIGUSR1);
 
 	if (sigaction(SIGINT,&sa,NULL) == -1)
 	{
@@ -73,6 +80,11 @@ int createSigHandlers()
 		printLogError("SIGCHLD (child process terminated) handler failed to register", errno);
 		retval |= 4;
 	}
+	if (sigaction(SIGUSR1,&sa,NULL) == -1)
+	{
+		printLogError("SIGUSR1 handler failed to register", errno);
+		retval |= 8;
+	}
 
 	return retval;
 }
@@ -87,6 +99,7 @@ int createChildSigHandlers()
 	sigemptyset(&sa.sa_mask);
 	sigaddset(&sa.sa_mask,SIGINT);
 	sigaddset(&sa.sa_mask,SIGTERM);
+	sigaddset(&sa.sa_mask,SIGUSR1);
 
 	if (sigaction(SIGINT,&sa,NULL) == -1)
 	{
@@ -97,6 +110,11 @@ int createChildSigHandlers()
 	{
 		printLogError("SIGTERM (kill) handler failed to register", errno);
 		retval |= 2;
+	}
+	if (sigaction(SIGUSR1,&sa,NULL) == -1)
+	{
+		printLogError("SIGUSR1 handler failed to register", errno);
+		retval |= 8;
 	}
 
 	return retval;

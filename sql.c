@@ -216,6 +216,13 @@ int addHost(const char* ip, char* hostname)
 	return 0;
 }
 
+void addHosts(struct sqlIPResults* entries)
+{
+	for(; entries != NULL; entries = entries->next)
+		addHost(entries->ip, entries->name);
+	return;
+}
+
 int delHost(const char* ip)
 {
 	int retval;
@@ -276,7 +283,7 @@ struct sqlIPResults* getAllIPs()
 {
 	int retval;
 	char* queryFmt;
-	const char* val;
+	const char* val1, *val2;
 	struct sqlIPResults* last;
 	struct sqlIPResults* rslts = NULL;
 	struct sqlIPResults* firstResult = NULL;
@@ -292,7 +299,7 @@ struct sqlIPResults* getAllIPs()
 	}
 
 // ----------------------Select all rows-----------------------------------------------------------+
-	queryFmt = "SELECT ip FROM hosts;";															// |
+	queryFmt = "SELECT ip, name FROM hosts ORDER BY pid;";										// |
 																								// |
 	retval = sqlite3_prepare_v2(handle, queryFmt, -1, &query, NULL);							// |
 	if(retval != SQLITE_OK)																		// |
@@ -304,15 +311,16 @@ struct sqlIPResults* getAllIPs()
 																								// |
 	while((retval = sqlite3_step(query)) == SQLITE_ROW)										// |
 	{																							// |
-		val = (void*) sqlite3_column_text(query, 0);	// Stupid difference in signedness		// |
-		if(!val)								// Casting as a void* makes the warning go away	// |
+		val1 = (void*) sqlite3_column_text(query, 0); // Stupid difference in signedness		// |
+		val2 = (void*) sqlite3_column_text(query, 1); // Stupid difference in signedness		// |
+		if(!val1 || !val2)						// Casting as a void* makes the warning go away	// |
 			continue;																			// |
 																								// |
 		last = rslts;																			// |
 		rslts = calloc(1, sizeof(struct sqlIPResults));										// |
 		if(!rslts)																				// |
 		{																						// |
-			printLogError("sqlite: getAllIPs: malloc()", errno);								// |
+			printLogError("sqlite: getAllIPs: calloc()", errno);								// |
 			sqlite3_close(handle);																// |
 			return NULL;																		// |
 		}																						// |
@@ -322,14 +330,23 @@ struct sqlIPResults* getAllIPs()
 		else																					// |
 			firstResult = rslts;																// |
 																								// |
-		rslts->ip = calloc(strlen(val) + 1, 1);												// |
+		rslts->ip = calloc(strlen(val1) + 1, 1);												// |
 		if(!rslts->ip)																			// |
 		{																						// |
-			printLogError("sqlite: getAllIPs: malloc() %d", errno);								// |
+			printLogError("sqlite: getAllIPs: calloc() %d", errno);								// |
 			sqlite3_close(handle);																// |
 			return NULL;																		// |
 		}																						// |
-		strcpy(rslts->ip, val);																	// |
+		strcpy(rslts->ip, val1);																// |
+																								// |
+		rslts->name = calloc(strlen(val2) + 1, 1);												// |
+		if(!rslts->name)																		// |
+		{																						// |
+			printLogError("sqlite: getAllIPs: calloc() %d", errno);								// |
+			sqlite3_close(handle);																// |
+			return NULL;																		// |
+		}																						// |
+		strcpy(rslts->name, val2);																// |
 	}																							// |
 	if(retval != SQLITE_DONE)																	// |
 	{																							// |
@@ -352,12 +369,69 @@ struct sqlIPResults* getAllIPs()
 	return firstResult;
 }
 
+void addSqlIPResult(struct sqlIPResults** ptrEntries, const char* newIP, const char* newName)
+{
+	struct sqlIPResults* entries;
+
+	if(!ptrEntries)
+		return;
+
+	if(!*ptrEntries)
+	{
+		*ptrEntries = entries = malloc(sizeof(struct fileLines));
+		if(!*ptrEntries)
+		{
+			printLogError("server: malloc()", errno);
+			return;
+		}
+	}
+	else
+	{
+		for(entries = *ptrEntries; entries->next != NULL; entries = entries->next);
+
+		entries->next = malloc(sizeof(struct fileLines));
+		if(!entries->next)
+		{
+			printLogError("insertSqlIPResult: malloc()", errno);
+			return;
+		}
+		entries = entries->next;
+	}
+
+	entries->ip = calloc(strlen(newIP) + 1, 1);
+	if(!entries->ip)
+	{
+		printLogError("insertSqlIPResult: calloc()", errno);
+		return;
+	}
+	strcpy(entries->ip, newIP);
+
+	entries->name = calloc(strlen(newName) + 1, 1);
+	if(!entries->name)
+	{
+		printLogError("insertSqlIPResult: calloc()", errno);
+		return;
+	}
+	strcpy(entries->name, newName);
+
+	entries->next = NULL;
+	return;
+}
+
+int countSqlIPResults(struct sqlIPResults* entries)
+{
+	int i;
+	for(i = 0; entries != NULL; entries = entries->next, i++);
+	return i;
+}
+
 void freeSqlIPResult(struct sqlIPResults* rslt)
 {
 	if(!rslt) // Passed a null pointer
 		return;
 
 	free(rslt->ip);
+	free(rslt->name);
 	freeSqlIPResult(rslt->next);
 	free(rslt);
 

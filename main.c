@@ -6,11 +6,12 @@
  *
  *  TODO: cli argument for log level
  *  TODO: cli argument for bind address
+ *  TODO: find a way to to determine if host never replied to alive packet
+ *  TODO: find a less hackish lookup method than editing /etc/hosts
  *
  */
 
 #ifdef WINDOWS
-	#include <winsock.h>
 	#include <windows.h>
 #else
 	#include <stdio.h>
@@ -28,6 +29,7 @@
 int main()
 {
 	char* name = malloc(100);
+	//struct fileLines* lines, *line;
 
 	setLogFile(NULL); // Set the logfile to the default. "~/.reperire/reperire.log"
 	FILE* fp = fopen(logfile, "a+");

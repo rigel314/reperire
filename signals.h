@@ -15,6 +15,7 @@
 #endif
 
 extern volatile sig_atomic_t got_sigint;
+extern volatile sig_atomic_t got_sigusr1;
 
 int createSigHandlers();
 int createChildSigHandlers();
