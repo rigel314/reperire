@@ -1,0 +1,43 @@
+reperire
+========
+
+About
+	Reperire performs LAN hostname discovery with other computers
+	running it.  It keeps a SQLite database of the recent
+	hostnames.  Then it dums them in the hosts file.  Becuase it
+	needs to write to the hosts file, the program needs root
+	access.
+
+	It keeps the SQLite database and a log file in ~/.reperire.
+
+	It only works on linux at the moment.  It almost works in OS X
+	I have plans for it to work in Windows eventually.
+
+Build
+	`make`
+	You need to have sqlite installed.  On ubuntu, the package is
+	sqlite-dev.  Fedora uses sqlite-devel.  Gentoo uses
+	dev-db/sqlite.
+
+Installation
+	`make install`
+
+Running
+	`reperire`
+	OR
+	`reperire&` to run it in the background
+
+	At some point I will add an option for launching a daemon.
+
+	I will make some init scripts eventually so it can start up
+	with the system.
+
+Stopping
+	If it is running in the foreground, Ctrl-C will stop it
+	gracefully.  
+	If it is running in the background, `killall -INT reperire`
+	will stop it gracefully.  
+
+Questions/Bugs?
+	https://github.com/rigel314/reperire/issues
+	Contact me at <pi.rubiks@gmail.com>
