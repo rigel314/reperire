@@ -10,8 +10,8 @@ About
 
 	It keeps the SQLite database and a log file in ~/.reperire.
 
-	It only works on linux at the moment.  It almost works in OS X
-	I have plans for it to work in Windows eventually.
+	It works on linux and OS X.  I have plans for it to work in
+	Windows eventually.
 
 Build
 	`make`
