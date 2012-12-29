@@ -378,7 +378,7 @@ void addSqlIPResult(struct sqlIPResults** ptrEntries, const char* newIP, const c
 
 	if(!*ptrEntries)
 	{
-		*ptrEntries = entries = malloc(sizeof(struct fileLines));
+		*ptrEntries = entries = malloc(sizeof(struct sqlIPResults));
 		if(!*ptrEntries)
 		{
 			printLogError("server: malloc()", errno);
@@ -389,7 +389,7 @@ void addSqlIPResult(struct sqlIPResults** ptrEntries, const char* newIP, const c
 	{
 		for(entries = *ptrEntries; entries->next != NULL; entries = entries->next);
 
-		entries->next = malloc(sizeof(struct fileLines));
+		entries->next = malloc(sizeof(struct sqlIPResults));
 		if(!entries->next)
 		{
 			printLogError("insertSqlIPResult: malloc()", errno);
