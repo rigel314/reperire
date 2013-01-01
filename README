@@ -29,8 +29,8 @@ Running
 
 	At some point I will add an option for launching a daemon.
 
-	I will make some init scripts eventually so it can start up
-	with the system.
+	Init scripts can be found in my github wiki.
+	https://github.com/rigel314/reperire/wiki
 
 Stopping
 	If it is running in the foreground, Ctrl-C will stop it
