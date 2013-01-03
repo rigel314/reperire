@@ -1,6 +1,8 @@
 objects = main.o server.o client.o misc.o signals.o sql.o
 options = -lsqlite3
 out = reperire
+launchdfile = com.computingeureka.reperire.plist
+uname := $(shell uname)
 
 all : $(out)
 
@@ -19,6 +21,6 @@ signals.o :
 sql.o :
 	cc -c sql.c
 install : $(out)
-	cp $(out) /usr/local/bin
+	cp $(out) /usr/local/bin; if [[ "$(uname)" = "Darwin" ]]; then cp $(launchdfile) /Library/LaunchAgents; fi
 clean : 
 	rm $(out) $(objects)
