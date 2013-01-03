@@ -2,3 +2,4 @@ Debug
 .cproject
 .project
 .settings
+*.o
