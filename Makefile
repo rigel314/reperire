@@ -7,7 +7,7 @@ out = $(builddir)/reperire
 launchdfile = $(initdir)/com.computingeureka.reperire.plist
 uname := $(shell uname)
 
-all : clean $(out)
+all : $(out)
 
 $(out) : $(objects)
 	cc -o $(out) $(objects) $(options)
