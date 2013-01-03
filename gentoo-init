@@ -1,0 +1,25 @@
+#!/sbin/runscript
+# /etc/init.d/reperire
+
+#Settings
+PIDFILE=/var/run/reperire.pid
+SERVICE='reperire'
+OPTIONS=''
+INVOCATION="$SERVICE $OPTIONS"
+
+depend(){
+  need net
+}
+
+start(){
+  ebegin "Starting reperire"
+  start-stop-daemon --start --background --exec $INVOCATION \
+    --make-pidfile --pidfile $PIDFILE
+  eend $?
+}
+stop(){
+  ebegin "Stopping reperire"
+  start-stop-daemon --stop --exec $SERVICE \
+    --signal 2 --pidfile $PIDFILE
+  eend $?
+}

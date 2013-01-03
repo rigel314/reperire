@@ -1,0 +1,62 @@
+#!/bin/sh -e
+#
+# reperire init script
+#
+### BEGIN INIT INFO
+# Provides:          reperire
+# Required-Start:    $local_fs $syslog $network
+# Should-Start:
+# Required-Stop:
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: reperire LAN host discovery
+# Description:       reperire is a program to perform LAN host discovery.
+#                    see `https://github.com/rigel314/reperire` for details
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/local/bin/reperire
+NAME=reperire
+DESC="LAN host discovery"
+PIDFILE=/var/run/reperire.pid
+#CONFIGFILE=/etc/reperire.conf
+
+# abort if no executable exists
+[ -x $DAEMON ] || exit 0
+
+# Get lsb functions
+. /lib/lsb/init-functions
+. /etc/default/rcS
+
+checkpid() {
+  [ -e $PIDFILE ] || touch $PIDFILE
+}
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $DESC: $NAME"
+    checkpid
+    start-stop-daemon --start --quiet --background --oknodo \
+      --make-pidfile --pidfile $PIDFILE \
+      --exec $DAEMON
+    log_end_msg $?
+  ;;
+  stop)
+    log_daemon_msg "Stopping $DESC: $NAME"
+    start-stop-daemon --stop --signal 2 --quiet --oknodo --pidfile $PIDFILE
+    log_end_msg $?
+  ;;
+  restart|reload|force-reload)
+    $0 stop
+    sleep 1
+    $0 start
+  ;;
+  *)
+    N=/etc/init.d/$NAME
+    log_success_msg "Usage: $N {start|stop|restart|reload|force-reload}"
+    exit 1
+  ;;
+esac
+
+exit 0
