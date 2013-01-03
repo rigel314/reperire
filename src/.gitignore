@@ -1,0 +1,8 @@
+Debug
+.cproject
+.project
+.settings
+*.o
+*~
+\#*\#
+reperire
