@@ -6,7 +6,7 @@
 #define as16(buf)	*((uint16_t *)(buf))
 #define as32(buf)	*((uint32_t *)(buf))
 
-//#define PARSE_REPL
+//#define EXIT_ON_ERR_IN_LOOP
 
 uint8_t next8(char * buf, uint8_t * off) {
 	uint8_t v = as8(buf + *off);
@@ -89,7 +89,6 @@ void read_dns(char * buf, struct dns * msg) {
 	for (int i = 0; i < msg->header->qdcount; i++)
 		read_dns_query(buf, &off, queries++);
 	
-#ifdef PARSE_REPL
 	struct dns_record * answers = msg->answers = calloc(msg->header->ancount, sizeof(struct dns_record));
 	for (int i = 0; i < msg->header->ancount; i++)
 		read_dns_record(buf, &off, answers++);
@@ -101,7 +100,6 @@ void read_dns(char * buf, struct dns * msg) {
 	struct dns_record * additionals = msg->additionals = calloc(msg->header->arcount, sizeof(struct dns_record));
 	for (int i = 0; i < msg->header->arcount; i++) 
 		read_dns_record(buf, &off, additionals++);
-#endif
 }
 
 void free_dns(struct dns * msg) {
@@ -111,7 +109,6 @@ void free_dns(struct dns * msg) {
 	}
 	free(msg->queries);
 	
-#ifdef PARSE_REPL
 	for (int i = 0; i < msg->header->ancount; i++) {
 		free((msg->answers + i)->name);
 		free((msg->answers + i)->data);
@@ -132,10 +129,53 @@ void free_dns(struct dns * msg) {
 		free((msg->additionals + i)->rdata);
 	}
 	free(msg->additionals);
-#endif
 	
 	free(msg->header);
 	free(msg);
+}
+
+void print_dns(char * buf) {
+	struct dns * msg = malloc(sizeof(struct dns));
+	read_dns(buf, msg);
+	printf("DNS:\n");
+	printf("\tHeader:\n");
+	printf("\t\tID: %x\n", msg->header->id);
+	printf("\t\tFlags: %x\n", msg->header->data);
+	printf("\t\tQuery Count: %d\n", msg->header->qdcount);
+	printf("\t\tAnswer Count: %d\n", msg->header->ancount);
+	printf("\t\tAuthority Count: %d\n", msg->header->nscount);
+	printf("\t\tAdditional Count: %d\n", msg->header->arcount);
+	for (int i = 0; i < msg->header->qdcount; i++) {
+		printf("\tQuery:\n");
+		printf("\t\tName: %s\n", (msg->queries + i)->name);
+		printf("\t\tType: %x\n", (msg->queries + i)->data->type);
+		printf("\t\tClass: %x\n", (msg->queries + i)->data->class);
+	}
+	for (int i = 0; i < msg->header->ancount; i++) {
+		printf("\tAnswer:\n");
+		printf("\t\tName: %s\n", (msg->answers + i)->name);
+		printf("\t\tType: %x\n", (msg->answers + i)->data->type);
+		printf("\t\tClass: %x\n", (msg->answers + i)->data->class);
+		printf("\t\tTTL: %d\n", (msg->answers + i)->data->ttl);
+		printf("\t\tData Length: %d\n", (msg->answers + i)->data->rdlength);
+	}
+	for (int i = 0; i < msg->header->nscount; i++) {
+		printf("\tAuthority:\n");
+		printf("\t\tName: %s\n", (msg->authorities + i)->name);
+		printf("\t\tType: %x\n", (msg->authorities + i)->data->type);
+		printf("\t\tClass: %x\n", (msg->authorities + i)->data->class);
+		printf("\t\tTTL: %d\n", (msg->authorities + i)->data->ttl);
+		printf("\t\tData Length: %d\n", (msg->authorities + i)->data->rdlength);
+	}
+	for (int i = 0; i < msg->header->arcount; i++) {
+		printf("\tAdditional Record:\n");
+		printf("\t\tName: %s\n", (msg->additionals + i)->name);
+		printf("\t\tType: %x\n", (msg->additionals + i)->data->type);
+		printf("\t\tClass: %x\n", (msg->additionals + i)->data->class);
+		printf("\t\tTTL: %d\n", (msg->additionals + i)->data->ttl);
+		printf("\t\tData Length: %d\n", (msg->additionals + i)->data->rdlength);
+	}
+	free_dns(msg);
 }
 
 int forward(int s_local, int s_remote, char buf[BUFLEN], int * len, struct sockaddr_in * remote, struct sockaddr_in * client, int client_len) {
@@ -151,7 +191,7 @@ int forward(int s_local, int s_remote, char buf[BUFLEN], int * len, struct socka
 		return -1;
 	}
 
-	if (((uint16_t *)buf)[1] & 0x0F == 0x3) {
+	if (((struct dns_flags *)(buf + 2))->reply_code == 0x3) {
 		// no such name
 		return 1;
 	}
@@ -212,60 +252,25 @@ int main(int argc, char *argv[]) {
 			int ret;
 			
 			ret = forward(s_local, s_remote, buf, &recvd, remote, client, client_len);
-
+			
 			if (ret == -1)
+#ifdef EXIT_ON_ERR_IN_LOOP
 				return 1;
+#else
+				continue;
+#endif
 			else if (ret == 0)
-				return 0;
+				continue;
 			
 			// do some other stuff
 			
-			/*struct dns * msg = malloc(sizeof(struct dns));
-			read_dns(buf, msg);
-			printf("Packet from %s:%d, length %d, ", inet_ntoa(client->sin_addr), ntohs(client->sin_port), recvd);
-			for (int i = 0; i < recvd; i++)
-				printf("%02x", (unsigned char)buf[i]);
-			printf("\n");
-			printf("\tHeader:\n");
-			printf("\t\tID: %x\n", msg->header->id);
-			printf("\t\tFlags: %x\n", msg->header->data);
-			printf("\t\tQuery Count: %d\n", msg->header->qdcount);
-			printf("\t\tAnswer Count: %d\n", msg->header->ancount);
-			printf("\t\tAuthority Count: %d\n", msg->header->nscount);
-			printf("\t\tAdditional Count: %d\n", msg->header->arcount);
-			for (int i = 0; i < msg->header->qdcount; i++) {
-				printf("\tQuery:\n");
-				printf("\t\tName: %s\n", (msg->queries + i)->name);
-				printf("\t\tType: %x\n", (msg->queries + i)->data->type);
-				printf("\t\tClass: %x\n", (msg->queries + i)->data->class);
-			}
-			for (int i = 0; i < msg->header->ancount; i++) {
-				printf("\tAnswer:\n");
-				printf("\t\tName: %s\n", (msg->answers + i)->name);
-				printf("\t\tType: %x\n", (msg->answers + i)->data->type);
-				printf("\t\tClass: %x\n", (msg->answers + i)->data->class);
-				printf("\t\tTTL: %d\n", (msg->answers + i)->data->ttl);
-				printf("\t\tData Length: %d\n", (msg->answers + i)->data->rdlength);
-			}
-			for (int i = 0; i < msg->header->nscount; i++) {
-				printf("\tAuthority:\n");
-				printf("\t\tName: %s\n", (msg->authorities + i)->name);
-				printf("\t\tType: %x\n", (msg->authorities + i)->data->type);
-				printf("\t\tClass: %x\n", (msg->authorities + i)->data->class);
-				printf("\t\tTTL: %d\n", (msg->authorities + i)->data->ttl);
-				printf("\t\tData Length: %d\n", (msg->authorities + i)->data->rdlength);
-			}
-			for (int i = 0; i < msg->header->arcount; i++) {
-				printf("\tAdditional Record:\n");
-				printf("\t\tName: %s\n", (msg->additionals + i)->name);
-				printf("\t\tType: %x\n", (msg->additionals + i)->data->type);
-				printf("\t\tClass: %x\n", (msg->additionals + i)->data->class);
-				printf("\t\tTTL: %d\n", (msg->additionals + i)->data->ttl);
-				printf("\t\tData Length: %d\n", (msg->additionals + i)->data->rdlength);
-			}
-			free_dns(msg);*/
-		} else
+			/**/
+		} else {
 			perror("recvfrom");
+#ifdef EXIT_ON_ERR_IN_LOOP
+			return 1;
+#endif
+		}
 		sleep(1);
 	}
 	
