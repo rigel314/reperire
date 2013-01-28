@@ -44,8 +44,8 @@ clean :
 	-rm $(out) $(objects)
 uninstall : clean
 	-if [[ "$(uname)" = "Darwin" ]]; then\
-		rm /Library/LaunchAgents/$(launchdfile);\
 		launchctl unload -w /Library/LaunchDaemons/$(launchdfile);\
+		rm /Library/LaunchAgents/$(launchdfile);\
 	fi
 	-if [[ "$(uname)" = "Linux" ]]; then\
 		rm /etc/init.d/reperire;\
