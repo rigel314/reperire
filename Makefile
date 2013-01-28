@@ -4,7 +4,7 @@ initdir = init
 objects = $(builddir)/main.o $(builddir)/server.o $(builddir)/client.o $(builddir)/misc.o $(builddir)/signals.o $(builddir)/sql.o
 options = -lsqlite3
 out = $(builddir)/reperire
-launchdfile = $(initdir)/com.computingeureka.reperire.plist
+launchdfile = com.computingeureka.reperire.plist
 uname := $(shell uname)
 
 all : $(out)
@@ -29,7 +29,8 @@ install-executable : $(out)
 	cp $(out) /usr/local/bin
 install-init : install-executable
 	if [[ "$(uname)" = "Darwin" ]]; then\
-		cp $(launchdfile) /Library/LaunchAgents;\
+		cp $(initdir)/$(launchdfile) /Library/LaunchDaemons;\
+		launchctl load -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	if [[ "$(uname)" = "Linux" ]]; then\
 		if [[ "$(shell cat /proc/version)" = *Gentoo* ]]; then\
@@ -44,7 +45,9 @@ clean :
 uninstall : clean
 	-if [[ "$(uname)" = "Darwin" ]]; then\
 		rm /Library/LaunchAgents/$(launchdfile);\
+		launchctl unload -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	-if [[ "$(uname)" = "Linux" ]]; then\
 		rm /etc/init.d/reperire;\
 	fi
+	-rm /usr/local/bin/$(out)
