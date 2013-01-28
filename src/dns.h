@@ -8,23 +8,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+struct dns_flags {
+	uint8_t recursion_desired:1;
+	uint8_t truncated:1;
+	uint8_t authoritative:1;
+	uint8_t op_code:4;
+	uint8_t response:1;
+	uint8_t reply_code:4;
+	uint8_t accept_nonauth:1;
+	uint8_t authenticated:1;
+	uint8_t z:1;
+	uint8_t recursion_available:1;
+};
+
 struct dns_header {
 	uint16_t id;
-/*	union {
-		struct {
-			uint8_t response:1;
-			uint8_t opcode:4;
-			uint8_t authoritative:1;
-			uint8_t truncated:1;
-			uint8_t rdesired:1;
-			uint8_t ravailable:1;
-			uint8_t z:1;
-			uint8_t authenticated:
-			uint8_t rcode:4;
-		} flags;
-*/		uint16_t data;
-/*	} parameters;
-*/	uint16_t qdcount;
+	uint16_t data;
+	uint16_t qdcount;
 	uint16_t ancount;
 	uint16_t nscount;
 	uint16_t arcount;
