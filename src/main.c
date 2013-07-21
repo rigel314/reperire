@@ -4,8 +4,11 @@
  *  Created on: Dec 4, 2012
  *      Author: cody
  *
+ *  TODO: fix setlogfile segfault (no check for malloc return or getenv return)
+ *  	TODO: some for setdbfile
  *  TODO: cli argument for log level
  *  TODO: cli argument for bind address
+ *  TODO: cli argument for daemon
  *  TODO: find a way to to determine if host never replied to alive packet
  *  TODO: find a less hackish lookup method than editing /etc/hosts
  *
