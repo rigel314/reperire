@@ -4,7 +4,7 @@ reperire
 About
 	Reperire performs LAN hostname discovery with other computers
 	running it.  It keeps a SQLite database of the recent
-	hostnames.  Then it dums them in the hosts file.  Becuase it
+	hostnames.  Then it dumps them in the hosts file.  Becuase it
 	needs to write to the hosts file, the program needs root
 	access.
 
