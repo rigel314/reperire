@@ -36,12 +36,14 @@ void setLogFile(char* file)
 {
 	if(!file)
 	{
-		char* home = getenv("HOME");
-		logfile = malloc(strlen(home) + 24);
-		strcpy(logfile, home);
-		logfile = strcat(logfile, "/.reperire");
-		_mkdir(logfile);
-		logfile = strcat(logfile, "/reperire.log");
+//		char* home = getenv("HOME");
+//		logfile = malloc(strlen(home) + 24);
+//		strcpy(logfile, home);
+//		logfile = strcat(logfile, "/.reperire");
+//		_mkdir(logfile);
+//		logfile = strcat(logfile, "/reperire.log");
+		logfile = "/var/log/reperire/reperire.log";
+		_mkdir("/var/log/reperire");
 	}
 	else
 		logfile = file;

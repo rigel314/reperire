@@ -26,10 +26,12 @@ int setDBFile(char* file)
 
 	if (!file)
 	{
-		char* home = getenv("HOME");
-		dbFile = malloc(strlen(home) + 26);
-		strcpy(dbFile, home);
-		dbFile = strcat(dbFile, "/.reperire/ipsAndHosts.db");
+//		char* home = getenv("HOME");
+//		dbFile = malloc(strlen(home) + 26);
+//		strcpy(dbFile, home);
+//		dbFile = strcat(dbFile, "/.reperire/ipsAndHosts.db");
+		dbFile = "/var/lib/reperire/ipsAndHosts.db";
+		_mkdir("/var/lib/reperire");
 	}
 	else
 		dbFile = file;

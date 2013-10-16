@@ -162,8 +162,8 @@ int createServer()
 			waitpid(procTimer,NULL,0);
 			close(sockfd);
 			freeaddrinfo(servinfo);
-			free(hostname);
-			free(dbFile);
+			//free(hostname);
+			//free(dbFile);
 			exit(0);
 		}
 		if(got_sigusr1)

@@ -29,7 +29,8 @@ install-executable : $(out)
 	cp $(out) /usr/local/bin
 install-init : install-executable
 	if [[ "$(uname)" = "Darwin" ]]; then\
-		cp $(initdir)/osx-init /Library/LaunchAgents/$(launchdfile);\
+		cp $(initdir)/osx-init /Library/LaunchDaemons;\
+		launchctl load -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	if [[ "$(uname)" = "Linux" ]]; then\
 		if [[ "$(shell cat /proc/version)" = *Gentoo* ]]; then\
@@ -43,8 +44,10 @@ clean :
 	-rm $(out) $(objects)
 uninstall : clean
 	-if [[ "$(uname)" = "Darwin" ]]; then\
+		launchctl unload -w /Library/LaunchDaemons/$(launchdfile);\
 		rm /Library/LaunchAgents/$(launchdfile);\
 	fi
 	-if [[ "$(uname)" = "Linux" ]]; then\
 		rm /etc/init.d/reperire;\
 	fi
+	-rm /usr/local/bin/$(out)
