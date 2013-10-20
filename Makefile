@@ -29,7 +29,7 @@ install-executable : $(out)
 	cp $(out) /usr/local/bin
 install-init : install-executable
 	if [[ "$(uname)" = "Darwin" ]]; then\
-		cp $(initdir)/osx-init /Library/LaunchDaemons;\
+		cp $(initdir)/osx-init /Library/LaunchDaemons/$(launchdfile);\
 		launchctl load -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	if [[ "$(uname)" = "Linux" ]]; then\
