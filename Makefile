@@ -33,10 +33,14 @@ install-init : install-executable
 		launchctl load -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	if [[ "$(uname)" = "Linux" ]]; then\
-		if [[ "$(shell cat /proc/version)" = *Gentoo* ]]; then\
-			cp $(initdir)/gentoo-init /etc/init.d/reperire;\
+		if [[ "$(shell cat /proc/cmdline)" = *systemd* ]]; then\
+			cp $(initdir)/systemd-init /usr/lib/systemd/system/reperire.service;\
 		else\
-			cp $(initdir)/ubuntu-init /etc/init.d/reperire;\
+			if [[ "$(shell cat /proc/version)" = *Gentoo* ]]; then\
+				cp $(initdir)/gentoo-init /etc/init.d/reperire;\
+			else\
+				cp $(initdir)/ubuntu-init /etc/init.d/reperire;\
+			fi;\
 		fi;\
 	fi
 
