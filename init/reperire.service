@@ -1,0 +1,7 @@
+[Unit]
+Description=LAN host discovery
+After=network.target syslog.target
+
+[Service]
+ExecStart=/usr/local/bin/reperire
+Restart=on-abort
