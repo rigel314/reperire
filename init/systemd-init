@@ -5,3 +5,6 @@ After=network.target syslog.target
 [Service]
 ExecStart=/usr/local/bin/reperire
 Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
