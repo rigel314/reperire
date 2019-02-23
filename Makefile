@@ -33,7 +33,7 @@ install-init : install-executable
 		launchctl load -w /Library/LaunchDaemons/$(launchdfile);\
 	fi
 	if [[ "$(uname)" = "Linux" ]]; then\
-		if [[ "$(shell cat /proc/cmdline)" = *systemd* ]]; then\
+		if pidof systemd; then\
 			cp $(initdir)/systemd-init /usr/lib/systemd/system/reperire.service;\
 		else\
 			if [[ "$(shell cat /proc/version)" = *Gentoo* ]]; then\
